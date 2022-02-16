@@ -1,0 +1,206 @@
+{
+	"info": {
+		"_postman_id": "488f90f5-b000-4cbb-aea3-34c02c628eda",
+		"name": "API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Send notification",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"description": "(Required) CSRF token",
+						"key": "X-XSRF-TOKEN",
+						"value": "{{xsrfToken}}",
+						"disabled": true
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"Content\": \"mau\"\r\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}",
+					"host": [
+						"{{baseUrl}}"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"auth": {
+		"type": "oauth2",
+		"oauth2": [
+			{
+				"key": "clientSecret",
+				"value": "",
+				"type": "string"
+			},
+			{
+				"key": "grant_type",
+				"value": "password_credentials",
+				"type": "string"
+			},
+			{
+				"key": "redirect_uri",
+				"value": "{{callbackUrl}}",
+				"type": "string"
+			},
+			{
+				"key": "tokenType",
+				"value": "Bearer",
+				"type": "string"
+			},
+			{
+				"key": "accessToken",
+				"value": "{{accessToken}}",
+				"type": "string"
+			},
+			{
+				"key": "password",
+				"value": "{{password}}",
+				"type": "string"
+			},
+			{
+				"key": "username",
+				"value": "{{username}}",
+				"type": "string"
+			},
+			{
+				"key": "scope",
+				"value": "{{scope}}",
+				"type": "string"
+			},
+			{
+				"key": "clientId",
+				"value": "{{clientId}}",
+				"type": "string"
+			},
+			{
+				"key": "accessTokenUrl",
+				"value": "{{accessTokenUrl}}",
+				"type": "string"
+			},
+			{
+				"key": "authUrl",
+				"value": "{{authUrl}}",
+				"type": "string"
+			},
+			{
+				"key": "tokenName",
+				"value": "KeyCloak",
+				"type": "string"
+			},
+			{
+				"key": "addTokenTo",
+				"value": "header",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"/* There are 4 types of Grant Types in Oauth2. ",
+					"   Two of them (Auth code & Implicit) requires interaction with the browser which can't be",
+					"   automated.",
+					"   The other two types (client_credentials & password) doesn't require any browser",
+					"   interaction. So these can be automated from the scripts.",
+					"*/",
+					"console.log(\"Collection Pre-request script\");",
+					"//var server       = pm.environment.get(\"oauth2Server\");",
+					"//var realm        = pm.environment.get(\"oauth2Realm\");",
+					"var clientId     = pm.environment.get(\"clientId\");",
+					"var refreshToken = pm.environment.get(\"refreshToken\");",
+					"var tokenUrl = pm.environment.get(\"accessTokenUrl\");//`${server}/auth/realms/${realm}/protocol/openid-connect/token`;",
+					"var username = pm.environment.get(\"username\");",
+					"var password  = pm.environment.get(\"password\");",
+					"var scope = pm.environment.get(\"scope\");",
+					"var refreshTokenExists = false;",
+					"var refreshTokenExpired = false;",
+					"if (refreshToken) {",
+					"    const payload = refreshToken.split('.')[1];  // Assuming the JWT is in id_token",
+					"    const parsed = JSON.parse(atob(payload));",
+					"    expires = parsed.exp;",
+					"    var current_time = Date.now().valueOf() / 1000;",
+					"    refreshTokenExists = true;",
+					"    if (expires < current_time) {",
+					"        refreshTokenExpired = true;",
+					"        console.log(\"RefreshToken expired\")",
+					"    }",
+					"}",
+					"",
+					"usernamePasswordAuthentication(tokenUrl);",
+					"",
+					"// Authenticate using username and password",
+					"function usernamePasswordAuthentication(url) {",
+					"    console.log(\"Use username / password to authenticate\");",
+					"    pm.sendRequest({",
+					"        url: url,",
+					"        method: 'POST',",
+					"        header: { ",
+					"            'Content-Type': 'application/x-www-form-urlencoded',",
+					"        },",
+					"        body: {",
+					"            mode: 'raw',",
+					"            raw: `grant_type=password&client_id=${clientId}&username=${username}&password=${password}&scope=${scope}`",
+					"        }",
+					"    },  function(err, response) {",
+					"        if (err) {",
+					"            console.log(err);",
+					"        } else {",
+					"            var response_json = response.json();",
+					"            var accessToken = response_json.access_token;",
+					"            var refreshToken = response_json.refresh_token;",
+					"            pm.environment.set('accessToken', accessToken);",
+					"            pm.environment.set('refreshToken', refreshToken);",
+					"        }",
+					"    });",
+					"}"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}
